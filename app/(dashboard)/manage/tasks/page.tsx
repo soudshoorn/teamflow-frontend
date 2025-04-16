@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   fetchTasks,
   createTask,
@@ -45,7 +44,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChatHeader } from "@/components/chat-header";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 interface Task {
@@ -74,7 +72,6 @@ export default function ManageTasksPage() {
   const [userStories, setUserStories] = useState<UserStory[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState<string>("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -86,24 +83,11 @@ export default function ManageTasksPage() {
   const [filteredUserStories, setFilteredUserStories] = useState<UserStory[]>(
     []
   );
-  const router = useRouter();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const storedUsername = localStorage.getItem("teamflow-user");
-    if (!storedUsername) {
-      router.push("/");
-      return;
-    }
-    setUsername(storedUsername);
-  }, [router]);
 
   // Fetch data
   useEffect(() => {
-    if (username) {
-      loadData();
-    }
-  }, [username]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -251,17 +235,33 @@ export default function ManageTasksPage() {
     return epic?.title || "Onbekende Epic";
   };
 
-  if (!username) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <ChatHeader username={username} />
+    <div className="container max-w-4xl mx-auto p-4 flex-1">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Taken beheren</h1>
+        <Button
+          onClick={() => {
+            setNewTaskTitle("");
+            setNewTaskDescription("");
+            setSelectedUserStoryId("");
+            setSelectedEpicId("");
+            setShowAddDialog(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nieuwe Taak
+        </Button>
+      </div>
 
-      <div className="container max-w-4xl mx-auto p-4 flex-1">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Taken beheren</h1>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <p>Data laden...</p>
+        </div>
+      ) : tasks.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <p className="text-gray-500 mb-4">
+            Er zijn nog geen taken aangemaakt.
+          </p>
           <Button
             onClick={() => {
               setNewTaskTitle("");
@@ -272,82 +272,58 @@ export default function ManageTasksPage() {
             }}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nieuwe Taak
+            Eerste Taak aanmaken
           </Button>
         </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <p>Data laden...</p>
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-500 mb-4">
-              Er zijn nog geen taken aangemaakt.
-            </p>
-            <Button
-              onClick={() => {
-                setNewTaskTitle("");
-                setNewTaskDescription("");
-                setSelectedUserStoryId("");
-                setSelectedEpicId("");
-                setShowAddDialog(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Eerste Taak aanmaken
-            </Button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titel</TableHead>
-                  <TableHead>Beschrijving</TableHead>
-                  <TableHead>User Story</TableHead>
-                  <TableHead>Epic</TableHead>
-                  <TableHead className="w-[100px]">Acties</TableHead>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titel</TableHead>
+                <TableHead>Beschrijving</TableHead>
+                <TableHead>User Story</TableHead>
+                <TableHead>Epic</TableHead>
+                <TableHead className="w-[100px]">Acties</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.map((task) => (
+                <TableRow key={task.id}>
+                  <TableCell className="font-medium">{task.title}</TableCell>
+                  <TableCell className="truncate max-w-[150px]">
+                    {task.description || "-"}
+                  </TableCell>
+                  <TableCell>
+                    {getUserStoryTitle(task.userStoryId || "")}
+                  </TableCell>
+                  <TableCell>
+                    {getEpicForUserStory(task.userStoryId || "")}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(task)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDeleteDialog(task)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tasks.map((task) => (
-                  <TableRow key={task.id}>
-                    <TableCell className="font-medium">{task.title}</TableCell>
-                    <TableCell className="truncate max-w-[150px]">
-                      {task.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      {getUserStoryTitle(task.userStoryId || "")}
-                    </TableCell>
-                    <TableCell>
-                      {getEpicForUserStory(task.userStoryId || "")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(task)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openDeleteDialog(task)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Add Task Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

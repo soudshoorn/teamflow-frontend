@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   fetchEpics,
   createEpic,
@@ -36,7 +35,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChatHeader } from "@/components/chat-header";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 interface Epic {
@@ -48,31 +46,17 @@ interface Epic {
 export default function ManageEpicsPage() {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState<string>("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentEpic, setCurrentEpic] = useState<Epic | null>(null);
   const [newEpicTitle, setNewEpicTitle] = useState("");
   const [newEpicDescription, setNewEpicDescription] = useState("");
-  const router = useRouter();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const storedUsername = localStorage.getItem("teamflow-user");
-    if (!storedUsername) {
-      router.push("/");
-      return;
-    }
-    setUsername(storedUsername);
-  }, [router]);
 
   // Fetch epics
   useEffect(() => {
-    if (username) {
-      loadEpics();
-    }
-  }, [username]);
+    loadEpics();
+  }, []);
 
   const loadEpics = async () => {
     setIsLoading(true);
@@ -148,17 +132,31 @@ export default function ManageEpicsPage() {
     setShowDeleteDialog(true);
   };
 
-  if (!username) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <ChatHeader username={username} />
+    <div className="container max-w-4xl mx-auto p-4 flex-1">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Epics beheren</h1>
+        <Button
+          onClick={() => {
+            setNewEpicTitle("");
+            setNewEpicDescription("");
+            setShowAddDialog(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nieuwe Epic
+        </Button>
+      </div>
 
-      <div className="container max-w-4xl mx-auto p-4 flex-1">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Epics beheren</h1>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <p>Epics laden...</p>
+        </div>
+      ) : epics.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <p className="text-gray-500 mb-4">
+            Er zijn nog geen epics aangemaakt.
+          </p>
           <Button
             onClick={() => {
               setNewEpicTitle("");
@@ -167,72 +165,50 @@ export default function ManageEpicsPage() {
             }}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nieuwe Epic
+            Eerste Epic aanmaken
           </Button>
         </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <p>Epics laden...</p>
-          </div>
-        ) : epics.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-500 mb-4">
-              Er zijn nog geen epics aangemaakt.
-            </p>
-            <Button
-              onClick={() => {
-                setNewEpicTitle("");
-                setNewEpicDescription("");
-                setShowAddDialog(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Eerste Epic aanmaken
-            </Button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titel</TableHead>
-                  <TableHead>Beschrijving</TableHead>
-                  <TableHead className="w-[100px]">Acties</TableHead>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titel</TableHead>
+                <TableHead>Beschrijving</TableHead>
+                <TableHead className="w-[100px]">Acties</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {epics.map((epic) => (
+                <TableRow key={epic.id}>
+                  <TableCell className="font-medium">{epic.title}</TableCell>
+                  <TableCell className="truncate max-w-[300px]">
+                    {epic.description || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(epic)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDeleteDialog(epic)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {epics.map((epic) => (
-                  <TableRow key={epic.id}>
-                    <TableCell className="font-medium">{epic.title}</TableCell>
-                    <TableCell className="truncate max-w-[300px]">
-                      {epic.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(epic)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openDeleteDialog(epic)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Add Epic Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

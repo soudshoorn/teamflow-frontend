@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   fetchUserStories,
   createUserStory,
@@ -44,7 +43,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChatHeader } from "@/components/chat-header";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 interface UserStory {
@@ -65,7 +63,6 @@ export default function ManageUserStoriesPage() {
   const [userStories, setUserStories] = useState<UserStory[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState<string>("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -75,24 +72,11 @@ export default function ManageUserStoriesPage() {
   const [newUserStoryTitle, setNewUserStoryTitle] = useState("");
   const [newUserStoryDescription, setNewUserStoryDescription] = useState("");
   const [selectedEpicId, setSelectedEpicId] = useState<string>("");
-  const router = useRouter();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const storedUsername = localStorage.getItem("teamflow-user");
-    if (!storedUsername) {
-      router.push("/");
-      return;
-    }
-    setUsername(storedUsername);
-  }, [router]);
 
   // Fetch data
   useEffect(() => {
-    if (username) {
-      loadData();
-    }
-  }, [username]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -244,17 +228,32 @@ export default function ManageUserStoriesPage() {
     return epic?.title || "Onbekende Epic";
   };
 
-  if (!username) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <ChatHeader username={username} />
+    <div className="container max-w-4xl mx-auto p-4 flex-1">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">User Stories beheren</h1>
+        <Button
+          onClick={() => {
+            setNewUserStoryTitle("");
+            setNewUserStoryDescription("");
+            setSelectedEpicId("");
+            setShowAddDialog(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nieuwe User Story
+        </Button>
+      </div>
 
-      <div className="container max-w-4xl mx-auto p-4 flex-1">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">User Stories beheren</h1>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <p>Data laden...</p>
+        </div>
+      ) : userStories.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <p className="text-gray-500 mb-4">
+            Er zijn nog geen user stories aangemaakt.
+          </p>
           <Button
             onClick={() => {
               setNewUserStoryTitle("");
@@ -264,75 +263,52 @@ export default function ManageUserStoriesPage() {
             }}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nieuwe User Story
+            Eerste User Story aanmaken
           </Button>
         </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <p>Data laden...</p>
-          </div>
-        ) : userStories.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-500 mb-4">
-              Er zijn nog geen user stories aangemaakt.
-            </p>
-            <Button
-              onClick={() => {
-                setNewUserStoryTitle("");
-                setNewUserStoryDescription("");
-                setSelectedEpicId("");
-                setShowAddDialog(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Eerste User Story aanmaken
-            </Button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titel</TableHead>
-                  <TableHead>Beschrijving</TableHead>
-                  <TableHead>Epic</TableHead>
-                  <TableHead className="w-[100px]">Acties</TableHead>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titel</TableHead>
+                <TableHead>Beschrijving</TableHead>
+                <TableHead>Epic</TableHead>
+                <TableHead className="w-[100px]">Acties</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {userStories.map((story) => (
+                <TableRow key={story.id}>
+                  <TableCell className="font-medium">{story.title}</TableCell>
+                  <TableCell className="truncate max-w-[200px]">
+                    {story.description || "-"}
+                  </TableCell>
+                  <TableCell>{getEpicTitle(story.epicId || "")}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(story)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDeleteDialog(story)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {userStories.map((story) => (
-                  <TableRow key={story.id}>
-                    <TableCell className="font-medium">{story.title}</TableCell>
-                    <TableCell className="truncate max-w-[200px]">
-                      {story.description || "-"}
-                    </TableCell>
-                    <TableCell>{getEpicTitle(story.epicId || "")}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(story)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openDeleteDialog(story)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Add User Story Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

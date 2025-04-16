@@ -1,9 +1,11 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import type React from "react"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -11,83 +13,70 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  checkUserExists,
-  createUser,
-  getUserByUsername,
-} from "@/lib/user-service";
+} from "@/components/ui/dialog"
+import { checkUserExists, createUser, getUserByUsername } from "@/lib/user-service"
 
 export default function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showNewUserDialog, setShowNewUserDialog] = useState(false);
-  const router = useRouter();
+  const [username, setUsername] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [showNewUserDialog, setShowNewUserDialog] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) return;
+    e.preventDefault()
+    if (!username.trim()) return
 
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const exists = await checkUserExists(username);
+      const exists = await checkUserExists(username)
 
       if (exists) {
         // User exists, log them in
-        const user = await getUserByUsername(username);
+        const user = await getUserByUsername(username)
         if (user) {
           // Sla zowel de gebruikersnaam als het ID op
-          localStorage.setItem("teamflow-user", username);
-          localStorage.setItem("teamflow-user-id", user.id);
-          router.push("/chat");
+          localStorage.setItem("teamflow-user", username)
+          localStorage.setItem("teamflow-user-id", user.id)
+          router.push("/chat")
         } else {
-          alert(
-            "Er is een fout opgetreden bij het inloggen. Probeer het later opnieuw."
-          );
+          alert("Er is een fout opgetreden bij het inloggen. Probeer het later opnieuw.")
         }
       } else {
         // User doesn't exist, show dialog
-        setShowNewUserDialog(true);
+        setShowNewUserDialog(true)
       }
     } catch (error) {
-      console.error("Error checking user:", error);
-      alert(
-        "Er is een fout opgetreden bij het controleren van de gebruiker. Probeer het later opnieuw."
-      );
+      console.error("Error checking user:", error)
+      alert("Er is een fout opgetreden bij het controleren van de gebruiker. Probeer het later opnieuw.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleCreateUser = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
-      const newUser = await createUser(username);
+      const newUser = await createUser(username)
       // Sla zowel de gebruikersnaam als het ID op
-      localStorage.setItem("teamflow-user", username);
-      localStorage.setItem("teamflow-user-id", newUser.id);
-      router.push("/chat");
+      localStorage.setItem("teamflow-user", username)
+      localStorage.setItem("teamflow-user-id", newUser.id)
+      router.push("/chat")
     } catch (error) {
-      console.error("Error creating user:", error);
-      alert(
-        "Er is een fout opgetreden bij het aanmaken van de gebruiker. Probeer het later opnieuw."
-      );
+      console.error("Error creating user:", error)
+      alert("Er is een fout opgetreden bij het aanmaken van de gebruiker. Probeer het later opnieuw.")
     } finally {
-      setIsLoading(false);
-      setShowNewUserDialog(false);
+      setIsLoading(false)
+      setShowNewUserDialog(false)
     }
-  };
+  }
 
   return (
     <>
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div>
-          <label
-            htmlFor="username"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
             Je naam
           </label>
           <div className="mt-1">
@@ -116,15 +105,11 @@ export default function LoginForm() {
           <DialogHeader>
             <DialogTitle>Nieuwe gebruiker</DialogTitle>
             <DialogDescription>
-              Er bestaat nog geen gebruiker met de naam "{username}". Wil je een
-              nieuwe gebruiker aanmaken?
+              Er bestaat nog geen gebruiker met de naam "{username}". Wil je een nieuwe gebruiker aanmaken?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewUserDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowNewUserDialog(false)}>
               Annuleren
             </Button>
             <Button onClick={handleCreateUser} disabled={isLoading}>
@@ -134,5 +119,5 @@ export default function LoginForm() {
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }
